@@ -1,4 +1,4 @@
-from redis import Redis
+from redis.asyncio import Redis
 
 class HistoryStore:
     """Cache client for managing cache operations"""
@@ -8,12 +8,12 @@ class HistoryStore:
 
     async def get(self, room: str) -> str:
         key = f"history:{room}"
-        return self.client.lrange(key, 0, -1)
+        return await self.client.lrange(key, 0, -1)
 
     async def push(self, room: str, message: str):
         key = f"history:{room}"
         pipeline = self.client.pipeline()
         pipeline.rpush(key, message)
         pipeline.ltrim(key, -self.max_history, -1)
-        pipeline.execute()
+        await pipeline.execute()
         

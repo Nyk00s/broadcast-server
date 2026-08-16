@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import SecretStr
 
 
 class Config(BaseSettings):
@@ -7,7 +8,11 @@ class Config(BaseSettings):
 
     cache_port: int
     cache_host: str
-    cache_url: str
+
+    jwt_secret: SecretStr
+    jwt_algorithm: str
+    access_token_ttl_minutes: int
+    refresh_token_ttl_days: int
 
     model_config = SettingsConfigDict(
         env_file=".env",

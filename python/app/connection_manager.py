@@ -11,19 +11,15 @@ class ConnectionManager:
         self.connections: dict[str, set] = dict()
         self.history_store = history_store
 
-    async def broadcast(self, message: str, room: str):
-        await self.history_store.push(room, message)
+    async def broadcast(self, message: str, room: str, sender: str):
+        await self.history_store.push(room, json.dumps({"text": message, "sender": sender}))
         for conn in list(self.connections.get(room, set())):
             try:
-                await conn.send_json({
-                    "type": "message",
-                    "text": message,
-                })
+                await conn.send_json({'type': 'message', 'text': message, 'sender': sender})
             except Exception:
                 self.connections.get(room, set()).discard(conn)
 
     async def connect(self, websocket: WebSocket, room: str):
-        await websocket.accept()
         self.connections.setdefault(room, set()).add(websocket)
         data = await self.history_store.get(room)
         messages = self._transform_messages_into_dict(data)
@@ -41,10 +37,11 @@ class ConnectionManager:
     def _transform_messages_into_dict(self, messages: list) -> list[dict[str, str]]:
         result = []
         for mess in messages:
-            text_val = mess.decode("utf-8") if isinstance(mess, bytes) else mess
+            data = json.loads(mess)
             result.append(
                 {
-                    "text": text_val
+                    "text": data['text'],
+                    "sender": data['sender']
                 }
             )
         return result
