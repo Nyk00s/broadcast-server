@@ -12,7 +12,7 @@ class ConnectionManager:
         self.history_store = history_store
 
     async def broadcast(self, message: str, room: str, sender: str):
-        await self.history_store.push(room, json.dumps({"text": message, "sender": sender}))
+        await self.history_store.push(room, {"text": message, "sender": sender})
         for conn in list(self.connections.get(room, set())):
             try:
                 await conn.send_json({'type': 'message', 'text': message, 'sender': sender})
@@ -37,11 +37,10 @@ class ConnectionManager:
     def _transform_messages_into_dict(self, messages: list) -> list[dict[str, str]]:
         result = []
         for mess in messages:
-            data = json.loads(mess)
             result.append(
                 {
-                    "text": data['text'],
-                    "sender": data['sender']
+                    "text": mess['text'],
+                    "sender": mess['sender']
                 }
             )
         return result

@@ -1,4 +1,5 @@
 from redis.asyncio import Redis
+import json
 
 class HistoryStore:
     """Cache client for managing cache operations"""
@@ -8,12 +9,14 @@ class HistoryStore:
 
     async def get(self, room: str) -> str:
         key = f"history:{room}"
-        return await self.client.lrange(key, 0, -1)
+        data = await self.client.lrange(key, 0, -1)
+        return [json.loads(message) for message in data]
 
-    async def push(self, room: str, message: str):
+
+    async def push(self, room: str, message: dict):
         key = f"history:{room}"
         pipeline = self.client.pipeline()
-        pipeline.rpush(key, message)
+        pipeline.rpush(key, json.dumps(message))
         pipeline.ltrim(key, -self.max_history, -1)
         await pipeline.execute()
         

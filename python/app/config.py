@@ -12,7 +12,6 @@ class Config(BaseSettings):
     jwt_secret: SecretStr
     jwt_algorithm: str
     access_token_ttl_minutes: int
-    refresh_token_ttl_days: int
 
     model_config = SettingsConfigDict(
         env_file=".env",
