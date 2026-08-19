@@ -1,5 +1,5 @@
 import Redis from 'ioredis'
-import { ChatMessage } from './types';
+import { ChatMessage } from './types.js';
 
 export class HistoryStore {
     private redis: Redis

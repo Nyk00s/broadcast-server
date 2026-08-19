@@ -1,12 +1,22 @@
 
 
 services:
+    app:
+      build: .
+      container_name: app
+      env_file: .env
+      ports:
+        - "${APP_PORT}:${APP_PORT}"
+      depends_on:
+        cache:
+          condition: service_healthy
+
     cache:
       image: redis:7
       container_name: cache
       env_file: .env
-      ports:
-      - "${CACHE_PORT}:${CACHE_PORT}"
+      expose:
+      - "${CACHE_PORT}"
       command: ["redis-server", "--port", "${CACHE_PORT}"]
       volumes:
       - "cache_data:/data"

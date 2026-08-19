@@ -1,9 +1,9 @@
 import express from 'express';
 import { IncomingMessage, createServer } from 'http';
 import { WebSocket, WebSocketServer } from "ws";
-import { HistoryStore } from './historyStore';
+import { HistoryStore } from './historyStore.js';
 import Redis from 'ioredis'
-import { createToken, verifyToken } from './tokens'
+import { createToken, verifyToken } from './tokens.js'
 import { ChatMessage } from './types';
 import 'dotenv/config';
 
@@ -12,7 +12,10 @@ const app = express()
 const server = createServer(app)
 const wss = new WebSocketServer( {server} );
 const connections = new Map<string, Set<WebSocket>>();
-const redis = new Redis();
+const redis = new Redis({
+    host: process.env.CACHE_HOST ?? 'localhost',
+    port: Number(process.env.CACHE_PORT ?? 6379),
+});
 const maxHistory = Number(process.env.MAX_HISTORY ?? 10);
 const historyStore = new HistoryStore(redis, maxHistory);
 
