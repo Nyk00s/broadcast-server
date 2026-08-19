@@ -1,0 +1,21 @@
+
+
+services:
+    cache:
+      image: redis:7
+      container_name: cache
+      env_file: .env
+      ports:
+      - "${CACHE_PORT}:${CACHE_PORT}"
+      command: ["redis-server", "--port", "${CACHE_PORT}"]
+      volumes:
+      - "cache_data:/data"
+      healthcheck:
+        test: ["CMD", "redis-cli", "-p", "${CACHE_PORT}", "ping"]
+        interval: 5s
+        timeout: 3s
+        retries: 5
+
+
+volumes:
+  cache_data:
