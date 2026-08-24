@@ -12,6 +12,7 @@ The same server is implemented in two languages, sharing the design and protocol
 
 - **Python** — FastAPI, `redis.asyncio`. See [`python/`](./python).
 - **Node** — TypeScript, Express + `ws`, `ioredis`. See [`node/`](./node).
+- **Go** — net/http + gorilla/websocket, go-redis. See [`go/`](./go).
 
 ---
 
@@ -49,13 +50,16 @@ In REST the server cannot push data on its own - it only responds to client requ
 
 
 ### Concurrency model (asyncio)
-Concurrency model. Both implementations run on a single-threaded event loop: tasks interleave rather than run in parallel. Broadcasting to a room must therefore tolerate the connection set changing while it iterates. Python (asyncio) awaits each send, so it iterates over a copy of the set; Node (ws) sends synchronously, so its loop runs to completion atomically and iterates the set directly. Same problem, two idioms.
+Broadcasting to a room must tolerate the connection set changing while it iterates — but each language reaches that safety differently. Python (asyncio) and Node run on a single-threaded event loop: Python awaits each send, so it iterates over a copy of the set; Node sends synchronously, so its loop runs atomically over the live set. Go is different — each connection runs in its own goroutine with real parallelism, so the shared connection map is guarded by a mutex held across the whole broadcast, which is what makes iterating the live set safe there. Same problem, three idioms: copy, synchronous send, and lock.
+
 
 ### Auth verified before joining
 The client's connection is accepted, then the JWT is verified, and only then is the client joined to a room. If the token is invalid, the client is rejected before joining.
 
+
 ### Redis for history
 History is stored in Redis rather than in process memory. This keeps it in a separate process, so it survives restarts of the application server and is shared rather than tied to one process. Each room is a Redis list; on every message the server does RPUSH + LTRIM in a pipeline, which keeps only the last N messages atomically - the durable equivalent of a deque(maxlen=N).
+
 
 ### HistoryStore abstraction
 The connection-handling layer doesn't know history lives in Redis — it receives a HistoryStore via dependency injection and works with plain message objects. Swapping the storage backend wouldn't require changing the broadcast logic.
